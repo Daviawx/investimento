@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Invest App (HTML/CSS/JS)</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">₿</div>
+      <div>
+        <div class="title">Invest App</div>
+        <div class="subtitle">Portfólio + Metas + Relatórios (offline)</div>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <button id="btnExport" class="btn">Exportar</button>
+      <label class="btn btn-ghost" for="importFile">Importar</label>
+      <input id="importFile" type="file" accept="application/json" hidden />
+      <button id="btnReset" class="btn btn-danger">Reset</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <!-- COLUNA ESQUERDA -->
+    <section class="card">
+      <h2>Resumo</h2>
+      <div class="kpis">
+        <div class="kpi">
+          <div class="kpi-label">Patrimônio (estimado)</div>
+          <div id="kpiEquity" class="kpi-value">R$ 0,00</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Caixa</div>
+          <div id="kpiCash" class="kpi-value">R$ 0,00</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">P&L (não realizado)</div>
+          <div id="kpiUnreal" class="kpi-value">R$ 0,00</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">P&L (realizado)</div>
+          <div id="kpiReal" class="kpi-value">R$ 0,00</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h3>Curva de patrimônio</h3>
+      <canvas id="equityChart" width="800" height="260" class="chart"></canvas>
+      <div class="hint">Baseado nas transações + preços manuais.</div>
+    </section>
+
+    <section class="card">
+      <h2>Nova transação</h2>
+      <form id="txForm" class="form">
+        <div class="row">
+          <label>Data
+            <input id="txDate" type="date" required />
+          </label>
+
+          <label>Tipo
+            <select id="txType" required>
+              <option value="deposit">Depósito</option>
+              <option value="withdraw">Saque</option>
+              <option value="buy">Compra</option>
+              <option value="sell">Venda</option>
+              <option value="dividend">Dividendo</option>
+              <option value="fee">Taxa</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="row">
+          <label>Ativo (ex: PETR4, IVVB11, BTC)
+            <input id="txAsset" type="text" placeholder="Opcional para depósito/saque" />
+          </label>
+        </div>
+
+        <div class="row">
+          <label>Quantidade
+            <input id="txQty" type="number" step="0.00000001" placeholder="0" />
+          </label>
+
+          <label>Preço (R$)
+            <input id="txPrice" type="number" step="0.01" placeholder="0" />
+          </label>
+        </div>
+
+        <div class="row">
+          <label>Taxas (R$)
+            <input id="txFees" type="number" step="0.01" placeholder="0" value="0" />
+          </label>
+
+          <label>Notas
+            <input id="txNote" type="text" placeholder="Ex: corretagem, IRRF..." />
+          </label>
+        </div>
+
+        <div class="row actions">
+          <button class="btn btn-primary" type="submit">Adicionar</button>
+          <button id="btnClearForm" class="btn btn-ghost" type="button">Limpar</button>
+        </div>
+      </form>
+
+      <div class="divider"></div>
+
+      <h3>Filtros</h3>
+      <div class="row">
+        <label>Buscar
+          <input id="qSearch" type="text" placeholder="ativo / nota / tipo" />
+        </label>
+        <label>Mês
+          <input id="qMonth" type="month" />
+        </label>
+      </div>
+      <div class="row">
+        <label>Tipo
+          <select id="qType">
+            <option value="">Todos</option>
+            <option value="deposit">Depósito</option>
+            <option value="withdraw">Saque</option>
+            <option value="buy">Compra</option>
+            <option value="sell">Venda</option>
+            <option value="dividend">Dividendo</option>
+            <option value="fee">Taxa</option>
+          </select>
+        </label>
+        <label>Ativo
+          <input id="qAsset" type="text" placeholder="Ex: PETR4" />
+        </label>
+      </div>
+    </section>
+
+    <!-- COLUNA DIREITA -->
+    <section class="card span2">
+      <div class="card-head">
+        <h2>Transações</h2>
+        <div class="small">
+          Total: <span id="txCount">0</span>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table" id="txTable">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Tipo</th>
+              <th>Ativo</th>
+              <th class="num">Qtd</th>
+              <th class="num">Preço</th>
+              <th class="num">Taxas</th>
+              <th class="num">Total</th>
+              <th>Notas</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="hint">Editar: clique na linha. Remover: ícone 🗑️</div>
+    </section>
+
+    <section class="card">
+      <h2>Preços manuais</h2>
+      <form id="priceForm" class="form">
+        <div class="row">
+          <label>Ativo
+            <input id="pAsset" type="text" required placeholder="PETR4" />
+          </label>
+          <label>Preço (R$)
+            <input id="pPrice" type="number" step="0.01" required />
+          </label>
+        </div>
+        <div class="row actions">
+          <button class="btn btn-primary" type="submit">Salvar preço</button>
+        </div>
+      </form>
+
+      <div class="divider"></div>
+      <div id="pricesList" class="list"></div>
+      <div class="hint">Usado para calcular patrimônio e P&L não realizado.</div>
+    </section>
+
+    <section class="card">
+      <h2>Metas e orçamento</h2>
+
+      <div class="subgrid">
+        <div>
+          <h3>Meta de patrimônio</h3>
+          <form id="goalForm" class="form">
+            <div class="row">
+              <label>Meta (R$)
+                <input id="gEquity" type="number" step="0.01" placeholder="100000" />
+              </label>
+            </div>
+            <div class="row actions">
+              <button class="btn btn-primary" type="submit">Salvar meta</button>
+            </div>
+          </form>
+          <div class="progress">
+            <div class="progress-bar" id="goalBar"></div>
+          </div>
+          <div class="small" id="goalText">Defina uma meta para ver o progresso.</div>
+        </div>
+
+        <div>
+          <h3>Orçamento de aportes (mensal)</h3>
+          <form id="budgetForm" class="form">
+            <div class="row">
+              <label>Orçamento (R$)
+                <input id="bMonthly" type="number" step="0.01" placeholder="500" />
+              </label>
+              <label>Mês
+                <input id="bMonth" type="month" />
+              </label>
+            </div>
+            <div class="row actions">
+              <button class="btn btn-primary" type="submit">Salvar orçamento</button>
+            </div>
+          </form>
+          <div class="small" id="budgetText">Salve um orçamento e registre depósitos para acompanhar.</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h3>Alocação alvo (rebalance)</h3>
+      <form id="targetForm" class="form">
+        <div class="row">
+          <label>Ativo
+            <input id="tAsset" type="text" placeholder="IVVB11" />
+          </label>
+          <label>Alvo (%)
+            <input id="tPct" type="number" step="0.01" placeholder="25" />
+          </label>
+        </div>
+        <div class="row actions">
+          <button class="btn btn-primary" type="submit">Adicionar/Atualizar</button>
+          <button id="btnClearTargets" class="btn btn-ghost" type="button">Limpar alvos</button>
+        </div>
+      </form>
+      <div id="targetsList" class="list"></div>
+      <div class="divider"></div>
+      <div id="rebalanceBox" class="rebalance"></div>
+    </section>
+
+    <section class="card span2">
+      <h2>Relatório mensal</h2>
+      <div class="row">
+        <label>Selecione o mês
+          <input id="reportMonth" type="month" />
+        </label>
+        <button id="btnRunReport" class="btn btn-primary" type="button">Gerar</button>
+      </div>
+      <div id="reportBox" class="report"></div>
+      <div class="hint">Depósitos/saques/dividendos/taxas e resultado do mês.</div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>Offline • localStorage • sem bibliotecas</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
